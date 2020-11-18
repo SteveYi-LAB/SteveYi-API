@@ -40,7 +40,8 @@ if(empty($id)){
         echo 'Error:' . curl_error($ch);
     }
     $DIRECT_LINK=strchr($result, "https://");
-    $DIRECT_LINK=substr($DIRECT_LINK,0,-28);
+    $exp = "/.*(?=\">)/";
+    preg_match($exp, $DIRECT_LINK, $MATCHED_STR);
     curl_close($ch);
-    echo $DIRECT_LINK;
+    echo $DIRECT_LINK[0];
 }
