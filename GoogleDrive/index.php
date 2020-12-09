@@ -27,6 +27,7 @@ if(empty($id)){
     $USERCODE=str_replace($id,"",$USERCODE);
     $USERCODE=substr($USERCODE,0,-6);
     curl_close($ch);
+    
     //POST&GET COOKIE(Second)
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $download_link.'&confirm=Yi');
