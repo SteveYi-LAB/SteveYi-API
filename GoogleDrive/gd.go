@@ -2,41 +2,96 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
 
-func getCookieByName(cookie []*http.Cookie, name string) string {
-	for _, v := range cookie {
-		if v.Name == name {
-			return v.Value
+func webserver(w http.ResponseWriter, r *http.Request) {
+	id := "NULL"
+	if id == "NULL" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+		fmt.Println(r.URL.Path)
+		p := ".." + r.URL.Path
+		if p == "../GoogleDrive" || p == "../GoogleDrive/" {
+			p = "../GoogleDrive/"
+
+			r.ParseForm()
+			fmt.Println("method:", r.Method)
+			if r.Method == "GET" {
+				for key, values := range r.Form {
+					if key == "id" {
+						id = values[0]
+					}
+				}
+			}
+			Link := googledrive(id)
+			http.Redirect(w, r, Link, 302)
 		}
 	}
-	return ""
+
 }
 
-func main() {
-	id := "1AcMXeZRPc1K0HvHdniKGUi70X_ZvJTRx"
-	resp, err := http.Get("https://docs.google.com/uc?export=download&id=" + id)
+func googledrive(id string) string {
+
+	// Request Cookie
+	a, err := http.Get("https://docs.google.com/uc?export=download&id=" + id + "&confirm=Yi")
 	if err != nil {
-		panic("第一個錯誤")
+		fmt.Println(err)
 	}
 
-	cookieName, cookieNameFound := "", false
-	for _, cookie := range resp.Cookies() {
+	cookieName := ""
+	for _, cookie := range a.Cookies() {
 		if strings.HasPrefix(cookie.Name, "download_warning_") {
 			cookieName = (cookie.Name + "=Yi")
-			cookieNameFound = true
 			break
 		}
 	}
-	if !cookieNameFound {
-		fmt.Println("Not Found!")
-	}
-	fmt.Println(cookieName)
 
-	resp, err = http.Get("https://docs.google.com/uc?export=download&id=" + id + "&confirm=Yi")
+	// Request Direct Link
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	req, err := http.NewRequest("GET", "https://docs.google.com/uc?export=download&id="+id+"&confirm=Yi", nil)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+	}
+
+	idcookie := (cookieName + "; Domain=.docs.google.com; Expires=Wed, Path=/uc; Secure; HttpOnly")
+	req.Header.Add("Cookie", idcookie)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	defer resp.Body.Close()
+
+	// Get Direct Link
+	Link := (resp.Header.Get("Location"))
+	fmt.Println(Link)
+	return Link
+}
+
+func main() {
+	http.HandleFunc("/", webserver)
+
+	fmt.Print("\n")
+	fmt.Print("-------------------\n")
+	fmt.Print("\n")
+	fmt.Print("SteveYi API System\n")
+	fmt.Print("https://api.steveyi.net/\n")
+	fmt.Print("Port listing at 30061/\n")
+	fmt.Print("\n")
+	fmt.Print("-------------------\n")
+	fmt.Print("\n")
+
+	err := http.ListenAndServe(":30061", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
 	}
 }
