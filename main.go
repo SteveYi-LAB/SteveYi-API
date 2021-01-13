@@ -11,17 +11,14 @@ func webserver(w http.ResponseWriter, r *http.Request) {
 	id := "NULL"
 	if id == "NULL" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Println("method:", r.Method)
 
 		fmt.Println(r.URL.Path)
-		p := r.URL.Path
-		if p == (r.URL.Path) {
-			http.ServeFile(w, r, p)
-		}
-		if p == "GoogleDrive" || p == "GoogleDrive/" {
-			p = "GoogleDrive/"
+		p := "." + r.URL.Path
+		if p == "./GoogleDrive" || p == "./GoogleDrive/" {
+			p = "./GoogleDrive/"
 
 			r.ParseForm()
-			fmt.Println("method:", r.Method)
 			if r.Method == "GET" {
 				for key, values := range r.Form {
 					if key == "id" {
@@ -30,7 +27,11 @@ func webserver(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			Link := googledrive(id)
+			fmt.Println(id)
 			http.Redirect(w, r, Link, 302)
+		} else if p == (r.URL.Path) {
+			fmt.Print("顯示")
+			http.ServeFile(w, r, p)
 		}
 	}
 
@@ -51,6 +52,7 @@ func googledrive(id string) string {
 			break
 		}
 	}
+	fmt.Println(cookieName)
 
 	// Request Direct Link
 	client := &http.Client{
