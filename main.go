@@ -2,58 +2,38 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
 )
 
 func webserver(w http.ResponseWriter, r *http.Request) {
-	id := "NULL"
-	if id == "NULL" {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Println("method:", r.Method)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	io.WriteString(w, string("喵"))
+}
 
-		fmt.Println(r.URL.Path)
-		p := "." + r.URL.Path
-		if p == "./GoogleDrive" || p == "./GoogleDrive/" {
-			p = "./GoogleDrive/"
+func googleDriveWeb(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-			r.ParseForm()
-			if r.Method == "GET" {
-				for key, values := range r.Form {
-					if key == "id" {
-						id = values[0]
-					}
-				}
+	fmt.Println("method:", r.Method)
+	fmt.Println(r.URL.Path)
+
+	if r.Method == "GET" {
+		r.ParseForm()
+		id := "NULL"
+		for key, values := range r.Form {
+			if key == "id" {
+				id = values[0]
 			}
-			Link := googledrive(id)
-			fmt.Println(id)
-			http.Redirect(w, r, Link, 302)
-		} else if p == (r.URL.Path) {
-			fmt.Print("顯示")
-			http.ServeFile(w, r, p)
 		}
+		fmt.Println(id)
+		Link := googledrive(id)
+		http.Redirect(w, r, Link, 302)
 	}
-
 }
 
 func googledrive(id string) string {
-
-	// Request Cookie
-	a, err := http.Get("https://docs.google.com/uc?export=download&id=" + id + "&confirm=Yi")
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	cookieName := ""
-	for _, cookie := range a.Cookies() {
-		if strings.HasPrefix(cookie.Name, "download_warning_") {
-			cookieName = (cookie.Name + "=Yi")
-			break
-		}
-	}
-	fmt.Println(cookieName)
-
 	// Request Direct Link
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -61,18 +41,37 @@ func googledrive(id string) string {
 		},
 	}
 
-	req, err := http.NewRequest("GET", "https://docs.google.com/uc?export=download&id="+id+"&confirm=Yi", nil)
+	reqLink, _ := http.NewRequest("GET", "https://docs.google.com/uc?export=download&id="+id+"&confirm=Yi", nil)
+	req, err := client.Do(reqLink)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	idcookie := (cookieName + "; Domain=.docs.google.com; Expires=Wed, Path=/uc; Secure; HttpOnly")
-	req.Header.Add("Cookie", idcookie)
+	cookieName := ""
+	for _, cookie := range req.Cookies() {
+		fmt.Println(cookie.Name)
+		if strings.HasPrefix(cookie.Name, "download_warning_") {
+			cookieName = (cookie.Name + "=Yi")
+			break
+		}
+	}
+	if cookieName != "" {
+		cookieName += ";"
+	}
 
-	resp, err := client.Do(req)
+	//fmt.Println(cookieName)
+
+	idcookie := (cookieName + "Domain=.docs.google.com; Expires=Wed, Path=/uc; Secure; HttpOnly")
+	fmt.Println(idcookie)
+	reqLink.Header.Set("Cookie", idcookie)
+
+	resp, err := client.Do(reqLink)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	//body, err := ioutil.ReadAll(resp.Body)
+	//fmt.Println(string(body))
 
 	defer resp.Body.Close()
 
@@ -84,6 +83,7 @@ func googledrive(id string) string {
 
 func main() {
 	http.HandleFunc("/", webserver)
+	http.HandleFunc("/GoogleDrive", googleDriveWeb)
 
 	fmt.Print("\n")
 	fmt.Print("-------------------\n")
