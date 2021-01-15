@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -34,8 +35,12 @@ func webserver(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, p)
 		}
 	} else {
-		w.WriteHeader(404)
-		http.ServeFile(w, r, "./404.html")
+		w.WriteHeader(http.StatusNotFound)
+		c, err := ioutil.ReadFile("./404.html")
+		if err != nil {
+			fmt.Println(err)
+		}
+		w.Write(c)
 	}
 
 }
