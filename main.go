@@ -10,8 +10,8 @@ import (
 
 func webserver(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Println("IP Address: " + GetIP(r))
 
+	fmt.Println("\nIP Address: " + GetIP(r))
 	fmt.Println("method:", r.Method)
 	fmt.Println(r.URL.Path)
 
@@ -26,6 +26,7 @@ func webserver(w http.ResponseWriter, r *http.Request) {
 func googleDriveWeb(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
+	fmt.Println("\nIP Address: " + GetIP(r))
 	fmt.Println("method:", r.Method)
 	fmt.Println(r.URL.Path)
 
