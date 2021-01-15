@@ -10,7 +10,17 @@ import (
 
 func webserver(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	io.WriteString(w, string("SteveYi API System"))
+	fmt.Println("IP Address: " + GetIP(r))
+
+	fmt.Println("method:", r.Method)
+	fmt.Println(r.URL.Path)
+
+	p := "." + r.URL.Path
+	if p == "./" || p == "." {
+		io.WriteString(w, string("SteveYi API System"))
+	} else {
+		http.ServeFile(w, r, p)
+	}
 }
 
 func googleDriveWeb(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +93,16 @@ func googledrive(id string) string {
 	return Link
 }
 
+func GetIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-FORWARDED-FOR")
+	if forwarded != "" {
+		return forwarded
+	}
+	return r.RemoteAddr
+}
+
 func main() {
+
 	http.HandleFunc("/", webserver)
 	http.HandleFunc("/GoogleDrive", googleDriveWeb)
 	http.HandleFunc("/GoogleDrive/", googleDriveWeb)
