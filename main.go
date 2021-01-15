@@ -5,28 +5,45 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
 func webserver(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	fmt.Println("\nIP Address: " + GetIP(r))
+	fmt.Println("\nIP Address: " + getIP(r))
 	fmt.Println("method:", r.Method)
 	fmt.Println(r.URL.Path)
-
 	p := "." + r.URL.Path
-	if p == "./" || p == "." {
-		io.WriteString(w, string("SteveYi API System"))
-	} else {
-		http.ServeFile(w, r, p)
+
+	exist := "NULL"
+	if _, err := os.Stat(p); err == nil {
+		exist = "1"
+	} else if os.IsNotExist(err) {
+		exist = "0"
 	}
+
+	if exist == "1" {
+		if p == "./main" {
+			io.WriteString(w, string("SteveYi API System\n"))
+		}
+		if p == "./" || p == "." {
+			http.ServeFile(w, r, "./index.html")
+		} else {
+			http.ServeFile(w, r, p)
+		}
+	} else {
+		w.WriteHeader(404)
+		http.ServeFile(w, r, "./404.html")
+	}
+
 }
 
 func googleDriveWeb(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	fmt.Println("\nIP Address: " + GetIP(r))
+	fmt.Println("\nIP Address: " + getIP(r))
 	fmt.Println("method:", r.Method)
 	fmt.Println(r.URL.Path)
 
@@ -94,7 +111,7 @@ func googledrive(id string) string {
 	return Link
 }
 
-func GetIP(r *http.Request) string {
+func getIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-FORWARDED-FOR")
 	if forwarded != "" {
 		return forwarded
